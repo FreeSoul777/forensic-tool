@@ -155,8 +155,16 @@ class ReportGenerator:
             pdf.cell(0, 6, i, ln=True)
         pdf.ln(5)
         
-        icon_map = {'file': '📄', 'process': '⚙️', 'network': '🌐', 'socket': '🔌',
-                    'cron': '⏰', 'log': '📋', 'history': '📜', 'timer': '⏱️'}
+        icon_map = {
+            'file': '[FILE]',
+            'process': '[PROC]',
+            'network': '[NET]',
+            'socket': '[SOCK]',
+            'cron': '[CRON]',
+            'log': '[LOG]',
+            'history': '[HIST]',
+            'timer': '[TIMER]'
+        }
         
         for user in self.data.deleted_users:
             pdf.set_font('DejaVu', 'B', 11)

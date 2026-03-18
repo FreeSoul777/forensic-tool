@@ -177,23 +177,27 @@ class BashScanner:
                             user.artifacts.append(Artifact(type="cron", path=path, command=cmd.strip()))
             
             # Файлы с хэшами
-            for f in data.get('files', []):
-                if isinstance(f, dict):
-                    user.artifacts.append(Artifact(
-                        type="file", path=f.get('path'), size=f.get('size'),
-                        permissions=f.get('permissions'), modified=str(f.get('mtime', '')),
-                        hashes=f.get('hashes', {})
-                    ))
-                else:
-                    try:
-                        fd = json.loads(f)
-                        user.artifacts.append(Artifact(
-                            type="file", path=fd.get('path'), size=fd.get('size'),
-                            permissions=fd.get('permissions'), modified=str(fd.get('mtime', '')),
-                            hashes=fd.get('hashes', {})
-                        ))
-                    except:
-                        user.artifacts.append(Artifact(type="file", path=str(f)))
+            if 'files' in data:
+                for f in data.get('files', []):
+                    if isinstance(f, dict):
+                        if f.get('path'):  # Проверяем что путь существует
+                            user.artifacts.append(Artifact(
+                                type="file", path=f.get('path'), size=f.get('size'),
+                                permissions=f.get('permissions'), modified=str(f.get('mtime', '')),
+                                hashes=f.get('hashes', {})
+                            ))
+                    else:
+                        try:
+                            fd = json.loads(f)
+                            if fd.get('path'):  # Проверяем что путь существует
+                                user.artifacts.append(Artifact(
+                                    type="file", path=fd.get('path'), size=fd.get('size'),
+                                    permissions=fd.get('permissions'), modified=str(fd.get('mtime', '')),
+                                    hashes=fd.get('hashes', {})
+                                ))
+                        except:
+                            if f and f.strip():  # Проверяем что строка не пустая
+                                user.artifacts.append(Artifact(type="file", path=str(f)))
             
             # Логи
             for log in data.get('logs', []):
