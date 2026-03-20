@@ -132,94 +132,120 @@ class ReportGenerator:
         
         pdf.set_font('DejaVu', 'B', 16)
         pdf.cell(0, 15, 'ОТЧЕТ ПО АРТЕФАКТАМ', ln=True, align='C')
-        pdf.ln(5)
+        pdf.ln(8)
         
         pdf.set_font('DejaVu', '', 10)
-        pdf.cell(0, 6, f"ID: {self.data.investigation_id}", ln=True)
-        pdf.cell(0, 6, f"Дата: {self.data.timestamp}", ln=True)
-        pdf.cell(0, 6, f"Версия: v{self.data.tool_version}", ln=True)
-        pdf.cell(0, 6, f"Длительность: {self.data.scan_duration:.2f} сек", ln=True)
-        pdf.ln(10)
+        pdf.cell(0, 7, f"ID: {self.data.investigation_id}", ln=True)
+        pdf.cell(0, 7, f"Дата: {self.data.timestamp}", ln=True)
+        pdf.cell(0, 7, f"Версия: v{self.data.tool_version}", ln=True)
+        pdf.cell(0, 7, f"Длительность: {self.data.scan_duration:.2f} сек", ln=True)
+        pdf.ln(12)
         
         pdf.section_title("СТАТИСТИКА")
-        for s in [f"Всего: {self.data.total_users}", f"Системных: {self.data.system_users_count}",
-                  f"Активных: {self.data.active_users_count}", f"Удаленных: {self.data.deleted_users_count}"]:
-            pdf.cell(0, 6, s, ln=True)
-        pdf.ln(5)
+        for s in [f"Всего: {self.data.total_users}", 
+                f"Системных: {self.data.system_users_count}",
+                f"Активных: {self.data.active_users_count}", 
+                f"Удаленных: {self.data.deleted_users_count}"]:
+            pdf.cell(0, 7, s, ln=True)
+        pdf.ln(8)
         
         pdf.section_title("СИСТЕМА")
         for i in [f"Хост: {self.data.system_info.hostname}",
-                  f"ОС: {self.data.system_info.os_name} {self.data.system_info.os_version}",
-                  f"Ядро: {self.data.system_info.kernel}",
-                  f"Архитектура: {self.data.system_info.architecture}"]:
-            pdf.cell(0, 6, i, ln=True)
-        pdf.ln(5)
+                f"ОС: {self.data.system_info.os_name} {self.data.system_info.os_version}",
+                f"Ядро: {self.data.system_info.kernel}",
+                f"Архитектура: {self.data.system_info.architecture}"]:
+            pdf.cell(0, 7, i, ln=True)
+        pdf.ln(10)
         
-        icon_map = {
-            'file': '[FILE]',
-            'process': '[PROC]',
-            'network': '[NET]',
-            'socket': '[SOCK]',
-            'cron': '[CRON]',
-            'log': '[LOG]',
-            'history': '[HIST]',
-            'timer': '[TIMER]'
-        }
-        
-        for user in self.data.deleted_users:
-            pdf.set_font('DejaVu', 'B', 11)
-            pdf.set_text_color(52, 73, 94)
-            name = f" ({user.possible_username})" if user.possible_username else ""
-            pdf.cell(0, 8, f"UID: {user.uid}{name}", ln=True)
-            
+        if self.data.system_users:
+            pdf.section_title("СИСТЕМНЫЕ ПОЛЬЗОВАТЕЛИ")
             pdf.set_font('DejaVu', '', 10)
-            pdf.set_text_color(0, 0, 0)
-            if user.home_directory:
-                pdf.cell(0, 5, f"  Home: {user.home_directory}", ln=True)
-            
-            found = []
-            if user.found_in_processes: found.append("processes")
-            if user.found_in_files: found.append("files")
-            if user.found_in_cron: found.append("cron")
-            if found:
-                pdf.cell(0, 5, f"  Found in: {', '.join(found)}", ln=True)
-            
-            if user.artifacts:
+            for u in self.data.system_users:
+                pdf.cell(0, 6, f"  {u.username} (UID: {u.uid})", ln=True)
+                pdf.cell(5)
+                pdf.cell(0, 5, f"Shell: {u.shell}", ln=True)
+                pdf.cell(5)
+                pdf.cell(0, 5, f"Home: {u.home}", ln=True)
+                pdf.ln(4)
+            pdf.ln(6)
+        
+        if self.data.active_users:
+            pdf.section_title("АКТИВНЫЕ ПОЛЬЗОВАТЕЛИ")
+            pdf.set_font('DejaVu', '', 10)
+            for u in self.data.active_users:
+                pdf.cell(0, 6, f"  {u.username} (UID: {u.uid})", ln=True)
+                pdf.cell(5)
+                pdf.cell(0, 5, f"Shell: {u.shell}", ln=True)
+                pdf.cell(5)
+                pdf.cell(0, 5, f"Home: {u.home}", ln=True)
+                pdf.ln(4)
+            pdf.ln(6)
+        
+        if self.data.deleted_users:
+            pdf.section_title("УДАЛЕННЫЕ ПОЛЬЗОВАТЕЛИ")
+            pdf.set_font('DejaVu', '', 10)
+            for user in self.data.deleted_users:
                 pdf.set_font('DejaVu', 'B', 10)
-                pdf.cell(0, 5, f"  Артефакты ({len(user.artifacts)}):", ln=True)
-                pdf.set_font('DejaVu', '', 9)
+                pdf.cell(0, 6, f"  UID: {user.uid}", ln=True)
                 
-                for a in user.artifacts:
-                    icon = icon_map.get(a.type, '📁')
-                    if a.type == 'file':
-                        line = f"    {icon} {a.path}"
-                        if a.size: line += f" ({a.size} bytes)"
-                        if a.permissions: line += f" [{a.permissions}]"
-                        pdf.cell(0, 4, line, ln=True)
-                        if a.hashes:
-                            pdf.cell(5)
-                            pdf.cell(0, 4, f"MD5: {a.hashes.get('md5', 'N/A')}", ln=True)
-                            pdf.cell(5)
-                            pdf.cell(0, 4, f"SHA256: {a.hashes.get('sha256', 'N/A')}", ln=True)
-                    elif a.type == 'process':
-                        pdf.cell(0, 4, f"    {icon} PID {a.pid}: {a.command}", ln=True)
-                    elif a.type == 'network':
-                        path = a.path or f"{a.protocol}:{a.address}" if a.protocol and a.address else ""
-                        pdf.cell(0, 4, f"    {icon} {path}" + (f" (PID: {a.pid})" if a.pid else ""), ln=True)
-                    elif a.type == 'socket':
-                        pdf.cell(0, 4, f"    {icon} {a.path}" + (f" (PID: {a.pid})" if a.pid else ""), ln=True)
-                    elif a.type == 'cron':
-                        cmd = f"[{a.path}] {a.command}" if a.path else a.command
-                        pdf.cell(0, 4, f"    {icon} {cmd}", ln=True)
-                    elif a.type == 'log':
-                        line = f"{a.path}: {a.line[:100]}" + ("..." if a.line and len(a.line) > 100 else "")
-                        pdf.cell(0, 4, f"    {icon} {line}", ln=True)
-                    elif a.type == 'history':
-                        pdf.cell(0, 4, f"    {icon} {a.command}", ln=True)
-                    else:
-                        pdf.cell(0, 4, f"    {icon} {a.path or a.command or 'N/A'}", ln=True)
-                pdf.ln(2)
-            pdf.ln(3)
+                pdf.set_font('DejaVu', '', 10)
+                
+                found = []
+                if user.found_in_processes: found.append("processes")
+                if user.found_in_files: found.append("files")
+                if user.found_in_cron: found.append("cron")
+                if found:
+                    pdf.cell(5)
+                    pdf.cell(0, 5, f"Found in: {', '.join(found)}", ln=True)
+                
+                if user.artifacts:
+                    pdf.cell(5)
+                    pdf.set_font('DejaVu', 'B', 9)
+                    pdf.cell(0, 5, f"Artifacts ({len(user.artifacts)}):", ln=True)
+                    pdf.set_font('DejaVu', '', 9)
+                    
+                    for a in user.artifacts:
+                        pdf.cell(10)
+                        
+                        if a.type == 'file':
+                            line = f"[FILE] {a.path}"
+                            if a.size: line += f" ({a.size} bytes)"
+                            if a.modified: line += f" [{a.modified}]"
+                            pdf.cell(0, 5, line, ln=True)
+                            
+                            if a.hashes:
+                                if a.hashes.get('md5'):
+                                    pdf.cell(15)
+                                    pdf.cell(0, 4, f"MD5: {a.hashes['md5']}", ln=True)
+                                if a.hashes.get('sha256'):
+                                    pdf.cell(15)
+                                    pdf.cell(0, 4, f"SHA256: {a.hashes['sha256']}", ln=True)
+                        
+                        elif a.type == 'process':
+                            pdf.cell(0, 5, f"[PROC] PID {a.pid}: {a.command}", ln=True)
+                        
+                        elif a.type == 'cron':
+                            cmd = f"[{a.path}] {a.command}" if a.path else a.command
+                            pdf.cell(0, 5, f"[CRON] {cmd}", ln=True)
+                        
+                        elif a.type == 'history':
+                            pdf.cell(0, 5, f"[HIST] {a.command}", ln=True)
+                        
+                        elif a.type == 'log':
+                            line = f"{a.path}: {a.line[:80]}" + ("..." if a.line and len(a.line) > 80 else "")
+                            pdf.cell(0, 5, f"[LOG] {line}", ln=True)
+                        
+                        elif a.type == 'network':
+                            path = a.path or f"{a.protocol}:{a.address}" if a.protocol and a.address else ""
+                            pdf.cell(0, 5, f"[NET] {path}" + (f" (PID: {a.pid})" if a.pid else ""), ln=True)
+                        
+                        elif a.type == 'socket':
+                            pdf.cell(0, 5, f"[SOCK] {a.path}" + (f" (PID: {a.pid})" if a.pid else ""), ln=True)
+                        
+                        else:
+                            pdf.cell(0, 5, f"[{a.type.upper()}] {a.path or a.command or 'N/A'}", ln=True)
+                
+                pdf.ln(6)
         
         pdf.output(str(out))
         logger.info(f"PDF: {out}")

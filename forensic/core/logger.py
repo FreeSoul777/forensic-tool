@@ -65,8 +65,6 @@ class SessionLogger:
         try:
             file_formatter = logging.Formatter(fmt=self.LOG_FORMAT, datefmt=self.DATE_FORMAT)
             self._setup_file_handler(file_formatter)
-            if self.settings.verbose:
-                self._setup_console_handler()
         except Exception as e:
             raise RuntimeError(f"Не удалось настроить логгер: {e}")
     
@@ -97,17 +95,6 @@ class SessionLogger:
         self.file_handler.setFormatter(file_formatter)
         self.file_handler.setLevel(getattr(logging, self.settings.log_level))
         self.logger.addHandler(self.file_handler)
-    
-    def _setup_console_handler(self):
-        console_formatter = ColoredFormatter(
-            fmt='%(asctime)s - %(levelname)s - %(message)s',
-            datefmt='%H:%M:%S',
-            use_colors=True
-        )
-        console_handler = logging.StreamHandler(sys.stdout)
-        console_handler.setFormatter(console_formatter)
-        console_handler.setLevel(getattr(logging, self.settings.log_level))
-        self.logger.addHandler(console_handler)
     
     def _log(self, level: str, message: str, *args, **kwargs):
         try:

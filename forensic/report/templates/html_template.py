@@ -203,11 +203,6 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             margin-bottom: 5px;
         }}
         
-        .user-meta {{
-            font-size: 14px;
-            opacity: 0.8;
-        }}
-        
         .user-body {{
             padding: 20px;
         }}
@@ -224,7 +219,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }}
         
         .info-label {{
-            width: 120px;
+            width: 100px;
             color: #7f8c8d;
             font-size: 14px;
         }}
@@ -265,20 +260,13 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
             font-size: 11px;
             color: #7f8c8d;
-            margin-top: 4px;
-        }}
-
-        .hash-info {{
-            font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
-            font-size: 11px;
-            color: #7f8c8d;
             margin-top: 6px;
             padding: 4px 8px;
             background: #f8f9fa;
             border-radius: 4px;
             border-left: 3px solid #3498db;
         }}
-
+        
         .hash-md5, .hash-sha256 {{
             display: inline-block;
             word-break: break-all;
@@ -330,7 +318,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
     <div class="container">
         <!-- Header -->
         <div class="header">
-            <h1>🔍 Forensic Investigation Report</h1>
+            <h1>Forensic Investigation Report</h1>
             <div class="subtitle">Detailed analysis of deleted users and system artifacts</div>
             
             <div class="metadata-grid">
@@ -462,21 +450,18 @@ def generate_user_card(user: dict) -> str:
     
     artifacts = user.get('artifacts', [])
     
-    # Формируем таблицу артефактов (ВСЕ артефакты)
     artifacts_rows = ""
     for artifact in artifacts:
         artifact_type = artifact.get('type', 'unknown')
         icon = ARTIFACT_TYPES.get(artifact_type, '📁')
         
-        # Формируем описание в зависимости от типа
         if artifact_type == 'file':
             description = artifact.get('path', 'N/A')
-            if 'size' in artifact and artifact['size']:
+            if artifact.get('size'):
                 description += f" ({artifact['size']} bytes)"
-            if 'permissions' in artifact and artifact['permissions']:
+            if artifact.get('permissions'):
                 description += f" [{artifact['permissions']}]"
             
-            # Добавляем хэши если есть
             hash_html = ""
             if artifact.get('hashes'):
                 hashes = artifact['hashes']
@@ -493,43 +478,37 @@ def generate_user_card(user: dict) -> str:
                 hash_html = ""
             
         elif artifact_type == 'process':
-            icon = '⚙️'  # Явно указываем иконку для процесса
             description = f"PID {artifact.get('pid')}: {artifact.get('command', '')}"
             hash_html = ""
             
         elif artifact_type == 'network':
-            icon = '🌐'  # Явно указываем иконку для сети
             path = artifact.get('path', '')
-            if not path and 'protocol' in artifact and 'address' in artifact:
+            if not path and artifact.get('protocol') and artifact.get('address'):
                 path = f"{artifact['protocol']}:{artifact['address']}"
             description = path
-            if 'pid' in artifact and artifact['pid']:
+            if artifact.get('pid'):
                 description += f" (PID: {artifact['pid']})"
             hash_html = ""
             
         elif artifact_type == 'socket':
-            icon = '🔌'  # Явно указываем иконку для сокета
             description = artifact.get('path', 'N/A')
-            if 'pid' in artifact and artifact['pid']:
+            if artifact.get('pid'):
                 description += f" (PID: {artifact['pid']})"
             hash_html = ""
             
         elif artifact_type == 'cron':
-            icon = '⏰'  # Явно указываем иконку для cron
             description = artifact.get('command', '')
             if artifact.get('path'):
                 description = f"[{artifact['path']}] {description}"
             hash_html = ""
             
         elif artifact_type == 'log':
-            icon = '📋'  # Явно указываем иконку для лога
             description = f"{artifact.get('path', '')}: {artifact.get('line', '')[:100]}"
             if artifact.get('line') and len(artifact['line']) > 100:
                 description += "..."
             hash_html = ""
             
         elif artifact_type == 'history':
-            icon = '📜'  # Явно указываем иконку для истории
             description = artifact.get('command', '')
             hash_html = ""
             
@@ -538,25 +517,18 @@ def generate_user_card(user: dict) -> str:
             hash_html = ""
         
         artifacts_rows += f"""
-        <tr>
-            <td>{icon} {artifact_type}</td>
-            <td>{description}{hash_html}</td>
-        </tr>
+         <tr>
+             <td>{icon} {artifact_type}</td>
+             <td>{description}{hash_html}</td>
+         </tr>
         """
     
     return f"""
     <div class="user-card">
         <div class="user-header">
             <div class="user-uid">UID: {user.get('uid', 'unknown')}</div>
-            <div class="user-meta">
-                {user.get('possible_username', '')}
-            </div>
         </div>
         <div class="user-body">
-            <div class="info-row">
-                <span class="info-label">Home Dir:</span>
-                <span class="info-value">{user.get('home_directory', 'N/A')}</span>
-            </div>
             <div class="info-row">
                 <span class="info-label">Found in:</span>
                 <span class="info-value">
@@ -568,11 +540,15 @@ def generate_user_card(user: dict) -> str:
             
             <h4 style="margin: 15px 0 10px 0;">Artifacts ({len(artifacts)})</h4>
             <table class="artifacts-table">
-                <tr>
-                    <th>Type</th>
-                    <th>Description</th>
-                </tr>
+                <thead>
+                    <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                    </tr>
+                </thead>
+                <tbody>
                 {artifacts_rows}
+                </tbody>
             </table>
         </div>
     </div>

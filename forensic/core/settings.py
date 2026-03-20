@@ -8,7 +8,6 @@ from dataclasses import dataclass
 @dataclass
 class ForensicSettings:
     log_level: str = "INFO"
-    verbose: bool = False
     session_dir: str = "/var/log/forensic"
     max_log_size: int = 10485760
     log_backup_count: int = 5
@@ -65,7 +64,6 @@ class SettingsManager:
         config = configparser.ConfigParser()
         config['forensic'] = {
             'log_level': 'INFO',
-            'verbose': 'false',
             'session_dir': '/var/log/forensic',
             'max_log_size': '10485760',
             'log_backup_count': '5',
@@ -83,8 +81,6 @@ class SettingsManager:
             section = config['forensic']
             if 'log_level' in section:
                 self.settings.log_level = section['log_level'].upper()
-            if 'verbose' in section:
-                self.settings.verbose = section.getboolean('verbose')
             if 'session_dir' in section:
                 self.settings.session_dir = section['session_dir']
             if 'max_log_size' in section:

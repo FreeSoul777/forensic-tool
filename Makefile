@@ -11,12 +11,12 @@ BLUE = \033[0;34m
 NC = \033[0m
 
 build:
-	@echo "$(BLUE)🔨 Сборка Docker образа...$(NC)"
+	@echo "$(BLUE)Сборка Docker образа...$(NC)"
 	@docker build -f $(DOCKERFILE_PATH) -t $(IMAGE_NAME) .
-	@echo "$(GREEN)✅ Образ собран: $(IMAGE_NAME)$(NC)"
+	@echo "$(GREEN)Образ собран: $(IMAGE_NAME)$(NC)"
 
 run:
-	@echo "$(BLUE)🚀 Запуск контейнера...$(NC)"
+	@echo "$(BLUE)Запуск контейнера...$(NC)"
 	@docker stop $(CONTAINER_NAME) 2>/dev/null || true
 	@docker rm $(CONTAINER_NAME) 2>/dev/null || true
 	@docker run -it \
@@ -30,17 +30,17 @@ run:
 		$(IMAGE_NAME)
 
 attach:
-	@echo "$(BLUE)🔌 Подключение к контейнеру...$(NC)"
+	@echo "$(BLUE)Подключение к контейнеру...$(NC)"
 	@docker exec -it $(CONTAINER_NAME) /bin/bash
 
 sync:
-	@echo "$(BLUE)🔄 Синхронизация кода...$(NC)"
+	@echo "$(BLUE)Синхронизация кода...$(NC)"
 	@docker cp . $(CONTAINER_NAME):/app/
-	@echo "$(GREEN)✅ Код синхронизирован$(NC)"
+	@echo "$(GREEN)Код синхронизирован$(NC)"
 
 clean:
-	@echo "$(YELLOW)🧹 Очистка...$(NC)"
+	@echo "$(YELLOW)Очистка...$(NC)"
 	@docker stop $(CONTAINER_NAME) 2>/dev/null || true
 	@docker rm $(CONTAINER_NAME) 2>/dev/null || true
 	@docker volume rm forensic_data 2>/dev/null || true
-	@echo "$(GREEN)✅ Очистка завершена$(NC)"
+	@echo "$(GREEN)Очистка завершена$(NC)"
